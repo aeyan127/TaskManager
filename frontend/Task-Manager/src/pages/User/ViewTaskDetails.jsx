@@ -6,10 +6,14 @@ import DashboardLayout from '../../components/layouts/DashboardLayout'
 import moment from 'moment';
 import AvatarGroup from '../../components/AvatarGroup'
 import { LuSquareArrowOutUpRight } from 'react-icons/lu'
+import {LuTrash2} from 'react-icons/lu'
 
 const ViewTaskDetails = () => {
   const {id}=useParams()
   const [task, setTask]=useState(null)
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
   const getStatusTagColor=(status)=>{
     switch(status){
       case "In Progress":
@@ -68,9 +72,42 @@ const ViewTaskDetails = () => {
     window.open(link,"_blank")
   }
 
+  //fetchs comments
+  const fetchComments = async () => {
+    try {
+      const res = await axiosInstance.get(API_PATHS.TASKS.GET_COMMENTS(id));
+      setComments(res.data);
+    } catch (err) {
+      console.error("Failed to fetch comments", err);
+    }
+  };
+
+const handleAddComment = async () => {
+  if (!newComment.trim()) return;
+  try {
+    await axiosInstance.post(API_PATHS.TASKS.ADD_COMMENT(id), {
+      text: newComment,
+    });
+    setNewComment("");
+    fetchComments(); // Refresh after submit
+  } catch (err) {
+    console.error("Error adding comment:", err);
+  }
+};
+
+const handleDeleteComment = async (commentId) => {
+  try {
+    await axiosInstance.delete(API_PATHS.TASKS.DELETE_COMMENT(id, commentId));
+    fetchComments(); // Refresh comments after deletion
+  } catch (err) {
+    console.error("Error deleting comment:", err);
+  }
+};
+
   useEffect(()=>{
     if(id){
       getTaskDetailsByID()
+      fetchComments();
     }
     return()=>{}
   },[id])
@@ -149,6 +186,46 @@ const ViewTaskDetails = () => {
                 ))}
               </div>
             )}
+            <div className='mt-4'>
+              <label className='text-xs font-medium text-slate-500'>Comments</label>
+              <div className='space-y-2 mt-2'>
+                {comments.map((c, i) => (
+                  <div
+                    key={c._id || i}
+                    className='text-[13px] text-gray-700 bg-gray-50 p-2 rounded-md border flex justify-between items-start'
+                  >
+                    <div>
+                      <p className='font-medium'>{c.user?.name || "User"}</p>
+                      <p className='text-xs text-gray-500'>{moment(c.createdAt).fromNow()}</p>
+                      <p>{c.text}</p>
+                    </div>
+                    <button
+                      onClick={() => handleDeleteComment(c._id)}
+                      className='text-red-500 hover:text-red-700 ml-4 p-1'
+                      aria-label="Delete comment"
+                      title="Delete comment"
+                    >
+                      <LuTrash2 size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className='mt-3 flex gap-2'>
+                <input
+                  type='text'
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder='Add a comment...'
+                  className='flex-1 border px-3 py-2 text-sm rounded-md'
+                />
+                <button
+                  onClick={handleAddComment}
+                  className='bg-primary text-white text-sm px-4 rounded-md'
+                >
+                  Send
+                </button>
+              </div>
+            </div>
           </div>
         </div>
         )}

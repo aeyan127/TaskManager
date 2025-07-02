@@ -11,7 +11,10 @@ const {
     updateTaskStatus,
     updateTaskChecklist,
     getDashboardData,
-    getUserDashboardData  } = require("../controllers/taskController");
+    getUserDashboardData,
+    addComment,
+    getComments,
+    deleteComment  } = require("../controllers/taskController");
 
 //Task Management Routes
 router.get("/dashboard-data", protect, getDashboardData);
@@ -23,5 +26,11 @@ router.put("/:id", protect, updateTask); //Update Task details
 router.delete("/:id", protect, adminOnly, deleteTask); //Delete a Task (Admin only)
 router.put("/:id/status", protect, updateTaskStatus); //Update Task Status
 router.put("/:id/todo", protect, updateTaskChecklist); //Update Task Checklist
+
+
+// Comments (by normal users)
+router.post("/:id/comments", protect, addComment);
+router.get("/:id/comments", protect, getComments);
+router.delete("/:id/comments/:commentId", protect, deleteComment);
 
 module.exports=router;

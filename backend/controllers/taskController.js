@@ -354,6 +354,77 @@ const getUserDashboardData = async (req, res) => {
     }
 };
 
+//@desc Add comment to a task
+//@route POST /api/tasks/:id/comments
+//@access Private (assigned users only)
+const addComment = async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) return res.status(404).json({ message: "Task not found" });
+
+        // Check if user is assigned to task
+        if (!task.assignedTo.some(userId => userId.toString() === req.user.id)) {
+            return res.status(403).json({ message: "Not authorized to comment" });
+        }
+
+        const comment = {
+            user: req.user.id,
+            text: req.body.text,
+        };
+
+        task.comments.push(comment);
+        await task.save();
+
+        res.status(201).json(task.comments);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+//@desc Get comments of a specific task
+//@route GET /api/tasks/:id/comments
+//@access Private
+const getComments = async (req, res) => {
+    try {
+        const task = await Task.findById(req.params.id)
+            .populate("comments.user", "name email profileImageURL")
+            .select("comments");
+
+        if (!task) return res.status(404).json({ message: "Task not found" });
+
+        res.status(200).json(task.comments);
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+//@desc Delete a comment from a task
+//@route DELETE /api/tasks/:taskId/comments/:commentId
+//@access Private (only assigned user or admin)
+const deleteComment = async (req, res) => {
+  try {
+    const { id: taskId, commentId } = req.params;
+    const task = await Task.findById(taskId);
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    const comment = task.comments.id(commentId);
+    if (!comment) return res.status(404).json({ message: "Comment not found" });
+
+    if (
+      comment.user.toString() !== req.user._id.toString() &&
+      req.user.role !== "admin"
+    ) {
+      return res.status(403).json({ message: "Not authorized to delete this comment" });
+    }
+
+    task.comments.pull(commentId); // use pull instead of remove
+    await task.save();
+    res.json({ message: "Comment deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports={
     getTasks,
     getTaskById,
@@ -364,4 +435,7 @@ module.exports={
     updateTaskChecklist,
     getDashboardData,
     getUserDashboardData,
+    addComment,
+    getComments,
+    deleteComment,
 };

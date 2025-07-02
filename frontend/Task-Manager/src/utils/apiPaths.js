@@ -26,6 +26,10 @@ export const API_PATHS = {
         
         UPDATE_TASK_STATUS: (taskId) => `/api/tasks/${taskId}/status`,
         UPDATE_TODO_CHECKLIST: (taskId) => `/api/tasks/${taskId}/todo`,
+        
+        ADD_COMMENT: (taskId) => `/api/tasks/${taskId}/comments`,
+        GET_COMMENTS: (taskId) => `/api/tasks/${taskId}/comments`,
+        DELETE_COMMENT: (taskId, commentId) => `/api/tasks/${taskId}/comments/${commentId}`,
     },
     REPORTS:{
         EXPORT_TASKS: "/api/reports/export/tasks",
